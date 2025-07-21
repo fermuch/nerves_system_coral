@@ -1,0 +1,12 @@
+--- a/Makefile  2025-07-21 18:24:27.208707709 +0000
++++ b/Makefile  2025-07-21 18:24:41.318692419 +0000
+@@ -1,5 +1,8 @@
+ # SPDX-License-Identifier: GPL-2.0+
+ 
++HOST_EXTRACFLAGS += $(shell pkg-config --cflags libcrypto 2>/dev/null || echo "")
++HOST_EXTRALIBS   += $(shell pkg-config --libs   libcrypto 2>/dev/null || echo "-lcrypto")
++
+ VERSION = 2024
+ PATCHLEVEL = 04
+ SUBLEVEL =
+---
