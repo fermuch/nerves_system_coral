@@ -13,3 +13,9 @@ Preliminary release that boots Nerves. Peripherals have not been validated.
 Upgraded to latest tool versions and re-configured nerves_defconfig.
 
 Still not for production usage.
+
+## v0.3.0
+
+Publishing buildable version.
+
+Still not ready for production usage.
