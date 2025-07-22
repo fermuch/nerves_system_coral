@@ -63,7 +63,7 @@ defmodule NervesSystemCoral.MixProject do
     [
       {:nerves, "~> 1.11", runtime: false},
       {:nerves_system_br, "1.31.3", runtime: false},
-      # {:nerves_toolchain_aarch64_nerves_linux_musl, "~> 14.2.0", runtime: false},
+      {:nerves_toolchain_aarch64_nerves_linux_gnu, "~> 14.2.0", runtime: false},
       {:nerves_system_linter, "~> 0.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.38.2", only: :docs, runtime: false}
     ]
