@@ -114,7 +114,8 @@ defmodule NervesSystemCoral.MixProject do
 
   defp build_runner_opts() do
     # Download source files first to get download errors right away.
-    [make_args: primary_site() ++ ["source", "all", "legal-info"]]
+    # [make_args: primary_site() ++ ["source", "all", "legal-info"]]
+    [make_args: primary_site() ++ ["source", "all"]]
   end
 
   defp primary_site() do
