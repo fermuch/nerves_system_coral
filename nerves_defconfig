@@ -100,9 +100,8 @@ BR2_DL_DIR=$HOME/.nerves/dl
 BR2_aarch64=y
 BR2_ARM_FPU_VFPV3=y
 BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_6_12=y
-# BR2_GLOBAL_PATCH_DIR="board/freescale/imx8mqevk/patches"
-# TODO: add ${BR2_EXTERNAL_NERVES_PATH}/patches 
-BR2_GLOBAL_PATCH_DIR="${NERVES_DEFCONFIG_DIR}/patches"
+# these patches come from (buildroot) board/freescale/imx8mqevk/patches
+BR2_GLOBAL_PATCH_DIR="${BR2_EXTERNAL_NERVES_PATH}/patches  ${NERVES_DEFCONFIG_DIR}/patches"
 BR2_DOWNLOAD_FORCE_CHECK_HASHES=y
 BR2_TARGET_GENERIC_GETTY_PORT="ttymxc0"
 BR2_ROOTFS_POST_IMAGE_SCRIPT="board/freescale/common/imx/imx8-bootloader-prepare.sh board/freescale/common/imx/post-image.sh"
@@ -142,3 +141,6 @@ BR2_PACKAGE_HOST_IMX_MKIMAGE=y
 BR2_PACKAGE_HOST_MTOOLS=y
 BR2_PACKAGE_HOST_UBOOT_TOOLS=y
 BR2_PACKAGE_HOST_UBOOT_TOOLS_FIT_SUPPORT=y
+BR2_NERVES_SYSTEM_NAME="nerves_system_coral"
+BR2_PACKAGE_NBTTY=y
+BR2_PACKAGE_NERVES_CONFIG=y

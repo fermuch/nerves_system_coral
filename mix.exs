@@ -61,7 +61,7 @@ defmodule NervesSystemCoral.MixProject do
 
   defp deps do
     [
-      {:nerves, "~> 1.11", runtime: false},
+      {:nerves, "~> 1.11.3", runtime: false},
       {:nerves_system_br, github: "nerves-project/nerves_system_br", tag: "v1.32.0", runtime: false},
       {:nerves_toolchain_aarch64_nerves_linux_gnu, "~> 13.2.0", runtime: false},
       {:nerves_system_linter, "~> 0.4", only: [:dev, :test], runtime: false},
