@@ -44,6 +44,10 @@ defmodule NervesSystemCoral.MixProject do
       artifact_sites: [
         {:github_releases, "#{@github_organization}/#{@app}"}
       ],
+      # build_runner: Nerves.Artifact.BuildRunners.Docker,
+      # build_runner_config: [
+      #   docker: {"Dockerfile", "./Dockerfile"}
+      # ],
       build_runner_opts: build_runner_opts(),
       platform: Nerves.System.BR,
       platform_config: [
@@ -61,11 +65,11 @@ defmodule NervesSystemCoral.MixProject do
 
   defp deps do
     [
-      {:nerves, "~> 1.11", runtime: false},
-      {:nerves_system_br, "1.31.3", runtime: false},
-      {:nerves_toolchain_aarch64_nerves_linux_gnu, "~> 14.2.0", runtime: false},
+      {:nerves, "~> 1.11.3", runtime: false},
+      {:nerves_system_br, github: "nerves-project/nerves_system_br", tag: "v1.32.0", runtime: false},
+      {:nerves_toolchain_aarch64_nerves_linux_gnu, "~> 13.2.0", runtime: false},
       {:nerves_system_linter, "~> 0.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.38.2", only: :docs, runtime: false}
+      {:ex_doc, "~> 0.34", only: :docs, runtime: false}
     ]
   end
 
@@ -114,7 +118,8 @@ defmodule NervesSystemCoral.MixProject do
 
   defp build_runner_opts() do
     # Download source files first to get download errors right away.
-    [make_args: primary_site() ++ ["source", "all", "legal-info"]]
+    # [make_args: primary_site() ++ ["source", "all", "legal-info"]]
+    [make_args: primary_site() ++ ["source", "all"]]
   end
 
   defp primary_site() do
