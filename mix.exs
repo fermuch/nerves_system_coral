@@ -12,7 +12,7 @@ defmodule NervesSystemCoral.MixProject do
     [
       app: @app,
       version: @version,
-      elixir: "~> 1.19",
+      elixir: "~> 1.19.0-rc.0",
       compilers: Mix.compilers() ++ [:nerves_package],
       nerves_package: nerves_package(),
       description: description(),
