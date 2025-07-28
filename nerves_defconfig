@@ -104,7 +104,8 @@ BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_6_12=y
 BR2_GLOBAL_PATCH_DIR="${BR2_EXTERNAL_NERVES_PATH}/patches ${NERVES_DEFCONFIG_DIR}/patches"
 BR2_DOWNLOAD_FORCE_CHECK_HASHES=y
 BR2_TARGET_GENERIC_GETTY_PORT="ttymxc0"
-BR2_ROOTFS_POST_IMAGE_SCRIPT="${NERVES_DEFCONFIG_DIR}/post-createfs.sh board/freescale/common/imx/imx8-bootloader-prepare.sh ${NERVES_DEFCONFIG_DIR}/post-image.sh"
+BR2_ROOTFS_POST_IMAGE_SCRIPT="board/freescale/common/imx/imx8-bootloader-prepare.sh ${NERVES_DEFCONFIG_DIR}/post-image.sh ${NERVES_DEFCONFIG_DIR}/post-createfs.sh"
+BR2_ROOTFS_POST_BUILD_SCRIPT="${NERVES_DEFCONFIG_DIR}/post-build.sh ${BR2_EXTERNAL_NERVES_PATH}/board/nerves-common/post-build.sh"
 BR2_ROOTFS_POST_SCRIPT_ARGS="${UBOOT_DIR}/arch/arm/dts/imx8mq-evk.dtb"
 BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_TARBALL=y
@@ -144,6 +145,9 @@ BR2_PACKAGE_HOST_UBOOT_TOOLS_FIT_SUPPORT=y
 BR2_NERVES_SYSTEM_NAME="nerves_system_coral"
 BR2_PACKAGE_NBTTY=y
 BR2_PACKAGE_NERVES_CONFIG=y
+# Needed for nerves
+BR2_PACKAGE_LIBMNL=y
+BR2_PACKAGE_LIBNL=y
 # Nerves requirement: Rootfs must be read-only
 BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW=n
 # Needed for env file

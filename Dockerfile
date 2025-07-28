@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 ARG OTP_VERSION=28.0.1
-ARG ELIXIR_VERSION=1.18.4
+ARG ELIXIR_VERSION=1.19.0-rc.0
 ARG NERVES_BOOTSTRAP_VERSION=1.13.0
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,22 +10,18 @@ ENV USER=root
 # We run as root to avoid permissions issues with the GitHub Actions runner.
 
 # Install required repositories and packages, excluding cmake for now
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:ubuntu-toolchain-r/test && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
     apt-get update && \
-    apt-get install -y \
-        pkg-config build-essential ninja-build automake autoconf libtool wget curl git libssl-dev bc squashfs-tools android-sdk-libsparse-utils \
-        jq tclsh scons parallel ssh-client tree python3-dev python3-pip device-tree-compiler libssl-dev ssh cpio \
-        fakeroot flex bison mtools gcc-11 g++-11 libbz2-dev zip unzip \
-        android-sdk-ext4-utils python3-distutils slib libncurses5 rsync xxd libncurses-dev \
-        ssh-askpass libmnl-dev libnl-genl-3-dev libncurses5-dev help2man libconfuse-dev libarchive-dev \
-        libncurses-dev libwxgtk3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev \
-        libssh-dev unixodbc-dev xsltproc fop libxml2-utils libncurses5-dev openjdk-11-jdk && \
+    apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository -y ppa:ubuntu-toolchain-r/test
+COPY vendor/packages.txt /tmp/packages.txt
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    xargs -a /tmp/packages.txt apt-get install -y --no-install-recommends && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 60 && \
-    pip3 install jinja2 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    pip3 install --no-cache-dir jinja2 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install cmake 3.16.5 manually
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5-Linux-x86_64.tar.gz && \
@@ -46,10 +42,9 @@ RUN wget https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_
     rm -rf otp_src_${OTP_VERSION} otp_src_${OTP_VERSION}.tar.gz
 
 # Install Elixir directly
-# NOTE: We use OTP 27 because it is binary-compatible with OTP 28.
-RUN wget https://github.com/elixir-lang/elixir/releases/download/v${ELIXIR_VERSION}/elixir-otp-27.zip && \
-    unzip elixir-otp-27.zip -d /usr/local && \
-    rm elixir-otp-27.zip
+RUN wget https://github.com/elixir-lang/elixir/releases/download/v${ELIXIR_VERSION}/elixir-otp-28.zip && \
+    unzip elixir-otp-28.zip -d /usr/local && \
+    rm elixir-otp-28.zip
 
 RUN mix local.hex --force && \
     mix local.rebar --force && \
