@@ -150,6 +150,8 @@ BR2_PACKAGE_LIBMNL=y
 BR2_PACKAGE_LIBNL=y
 # Nerves requirement: Rootfs must be read-only
 BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW=n
+# Nerves requirement: have no init system
+BR2_INIT_NONE=y
 # Needed for env file
 BR2_TARGET_UBOOT_CONFIG_FRAGMENT_FILES="${NERVES_DEFCONFIG_DIR}/uboot.config"
 # Env image
