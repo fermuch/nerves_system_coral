@@ -19,3 +19,7 @@ Still not for production usage.
 Publishing buildable version.
 
 Still not ready for production usage.
+
+## v0.4.0
+
+Lots of work still to be done, but: first bootable-to-elixir version!
