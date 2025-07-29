@@ -1,0 +1,14 @@
+config BR2_PACKAGE_IMX_BOARD_WLAN
+	bool "imx-board-wlan"
+	depends on BR2_LINUX_KERNEL
+	help
+	  WiFi driver for Google Coral Dev Board (i.MX8MQ).
+	  
+	  This package provides the Qualcomm CLD WiFi driver
+	  specifically adapted for the i.MX8MQ platform used
+	  in the Google Coral Dev Board.
+	  
+	  The driver is built as an out-of-tree kernel module
+	  and will be automatically loaded at boot.
+	  
+	  https://coral.googlesource.com/imx-board-wlan-src

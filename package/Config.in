@@ -1,0 +1,5 @@
+# Custom packages for Nerves System Coral
+
+menu "WiFi and Networking"
+	source "$NERVES_DEFCONFIG_DIR/package/imx-board-wlan/Config.in"
+endmenu

@@ -7,3 +7,6 @@ define NERVES_CONFIG_CREATE_DIRS
 endef
 
 NERVES_CONFIG_PRE_INSTALL_TARGET_HOOKS += NERVES_CONFIG_CREATE_DIRS
+
+# Include custom packages
+include $(sort $(wildcard $(NERVES_DEFCONFIG_DIR)/package/*/*.mk))
