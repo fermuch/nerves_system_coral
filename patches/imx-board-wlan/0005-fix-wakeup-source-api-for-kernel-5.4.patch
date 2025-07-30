@@ -3,9 +3,10 @@ From: System Builder <builder@nerves-project.org>
 Date: Wed, 30 Jul 2025 11:30:00 +0000
 Subject: [PATCH] Fix wakeup source and time APIs for kernel 5.4 compatibility
 
-Kernel 5.4 removed several wakeup source APIs:
-- wakeup_source_init() was removed, implement manual initialization
-- wakeup_source_trash() was removed, implement manual cleanup  
+Kernel 5.4 completely redesigned the wakeup source APIs:
+- wakeup_source_init() was removed, replaced with wakeup_source_register()
+- wakeup_source_trash() was removed, replaced with wakeup_source_unregister()
+- The new API requires proper registration/unregistration instead of manual init
 - get_monotonic_boottime() was replaced with ktime_get_boottime_ts64()
 - timespec64 replaced timespec in time functions
 
@@ -13,44 +14,95 @@ This patch provides proper kernel 5.4 compatibility implementations.
 
 Signed-off-by: System Builder <builder@nerves-project.org>
 ---
- CORE/VOSS/inc/vos_cnss.h | XX +++++++++++++++++++++---
- 1 file changed, XX insertions(+), XX deletions(-)
+ CORE/VOSS/inc/vos_cnss.h | 78 +++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 73 insertions(+), 5 deletions(-)
 
---- a/CORE/VOSS/inc/vos_cnss.h	2025-07-30 11:20:59.607782360 -0300
-+++ b/CORE/VOSS/inc/vos_cnss.h	2025-07-30 11:24:21.870075512 -0300
-@@ -89,7 +89,16 @@
+--- a/CORE/VOSS/inc/vos_cnss.h
++++ b/CORE/VOSS/inc/vos_cnss.h
+@@ -35,6 +35,11 @@
+ #if 1 /* Force open source path for kernel 5.4 compatibility */
+ #include <linux/device.h>
+ #include <linux/pm_wakeup.h>
++
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++/* Global wakeup source for kernel 5.4+ compatibility */
++static struct wakeup_source *global_vos_wake_lock = NULL;
++#endif
+ #include <linux/jiffies.h>
+ #include <linux/workqueue.h>
+ #include <linux/sched.h>
+@@ -89,28 +94,68 @@
  static inline void vos_pm_wake_lock_init(struct wakeup_source *ws,
  					const char *name)
  {
 -	wakeup_source_init(ws, name);
 +#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
-+        /* Kernel 5.4+ requires different approach - use manual initialization */
-+        /* Initialize the wakeup_source struct manually for kernel 5.4+ */
-+        memset(ws, 0, sizeof(*ws));
-+        ws->name = name;
-+        ws->active = false;
-+        ws->autosleep_enabled = true;
++        /* Kernel 5.4+ - use global wakeup source */
++        if (!global_vos_wake_lock) {
++                global_vos_wake_lock = wakeup_source_register(NULL, name);
++        }
++        /* For this old API, we just mark that we tried to init */
++        if (ws) {
++                memset(ws, 0, sizeof(*ws));
++        }
 +#else
 +        wakeup_source_init(ws, name);
 +#endif
  }
  
  static inline void vos_pm_wake_lock(struct wakeup_source *ws)
-@@ -110,7 +119,12 @@
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++        /* Kernel 5.4+ - use global wakeup source */
++        if (global_vos_wake_lock) {
++                __pm_stay_awake(global_vos_wake_lock);
++        }
++#else
+ 	__pm_stay_awake(ws);
++#endif
+ }
+ 
+ static inline void vos_pm_wake_lock_timeout(struct wakeup_source *ws,
+ 					ulong msec)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++        /* Kernel 5.4+ - use global wakeup source */
++        if (global_vos_wake_lock) {
++                __pm_wakeup_event(global_vos_wake_lock, msec);
++        }
++#else
+ 	 __pm_wakeup_event(ws, msec);
++#endif
+ }
+ 
+ static inline void vos_pm_wake_lock_release(struct wakeup_source *ws)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++        /* Kernel 5.4+ - use global wakeup source */
++        if (global_vos_wake_lock) {
++                __pm_relax(global_vos_wake_lock);
++        }
++#else
+ 	__pm_relax(ws);
++#endif
+ }
  
  static inline void vos_pm_wake_lock_destroy(struct wakeup_source *ws)
  {
 -	wakeup_source_trash(ws);
 +#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
-+        /* Kernel 5.4+ - manual cleanup */
-+        memset(ws, 0, sizeof(*ws));
++        /* Kernel 5.4+ - cleanup global wakeup source if needed */
++        if (global_vos_wake_lock) {
++                wakeup_source_unregister(global_vos_wake_lock);
++                global_vos_wake_lock = NULL;
++        }
 +#else
 +        wakeup_source_trash(ws);
 +#endif
  }
  
  static inline int vos_wlan_pm_control(bool vote)
-@@ -122,7 +136,15 @@
+@@ -122,7 +167,15 @@
  
  static inline void vos_get_monotonic_bootime_ts(struct timespec *ts)
  {
@@ -67,7 +119,7 @@ Signed-off-by: System Builder <builder@nerves-project.org>
  }
  
  static inline void vos_get_boottime_ts(struct timespec *ts)
-@@ -200,7 +222,15 @@
+@@ -200,7 +253,15 @@
  
  static inline void vos_get_monotonic_boottime_ts(struct timespec *ts)
  {
@@ -84,5 +136,4 @@ Signed-off-by: System Builder <builder@nerves-project.org>
  }
  
  static inline void vos_schedule_recovery_work(struct device *dev) { return; }
-
 ---

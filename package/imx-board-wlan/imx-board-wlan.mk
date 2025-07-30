@@ -19,6 +19,8 @@ define IMX_BOARD_WLAN_BUILD_CMDS
 		WLAN_ROOT=$(@D) \
 		MODNAME=wlan \
 		CONFIG_QCA_CLD_WLAN=m \
+		CONFIG_QCA_WIFI_ISOC=0 \
+		CONFIG_QCA_WIFI_2_0=1 \
 		modules
 endef
 

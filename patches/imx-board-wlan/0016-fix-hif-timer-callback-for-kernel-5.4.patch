@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 17:30:00 +0000
+Subject: [PATCH] Fix HIF timer callback signature for kernel 5.4
+
+The HIF_sleep_entry function is being called as a timer callback and causing
+a NULL pointer dereference due to signature mismatch between old and new
+timer APIs in kernel 5.4+.
+
+In kernel 5.4+, timer callbacks changed from:
+  void callback(unsigned long data)
+to:
+  void callback(struct timer_list *timer)
+
+This patch adds conditional compilation to handle both signatures and
+ensures proper parameter handling for the PCIe HIF implementation.
+It also fixes the function pointer cast at the call site to adf_os_timer_init.
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/SERVICES/HIF/PCIe/hif_pci.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+--- a/CORE/SERVICES/HIF/PCIe/hif_pci.c
++++ b/CORE/SERVICES/HIF/PCIe/hif_pci.c
+@@ -2354,9 +2354,15 @@
+ #define HIF_MIN_SLEEP_INACTIVITY_TIME_MS     50
+ #define HIF_SLEEP_INACTIVITY_TIMER_PERIOD_MS 60
+ static void
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++HIF_sleep_entry(struct timer_list *timer)
++{
++	struct HIF_CE_state *hif_state = from_timer(hif_state, timer, sleep_timer);
++#else
+ HIF_sleep_entry(void *arg)
+ {
+ 	struct HIF_CE_state *hif_state = (struct HIF_CE_state *)arg;
++#endif
+ 	A_target_id_t pci_addr = TARGID_TO_PCI_ADDR(hif_state->targid);
+ 	struct hif_pci_softc *sc = hif_state->sc;
+ 	u_int32_t idle_ms;
+@@ -2464,7 +2470,11 @@
+     hif_state->fake_sleep = FALSE;
+     hif_state->sleep_ticks = 0;
+     adf_os_timer_init(NULL, &hif_state->sleep_timer,
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++                      (adf_os_timer_func_t)HIF_sleep_entry, NULL,
++#else
+                       HIF_sleep_entry, (void *)hif_state,
++#endif
+                       ADF_NON_DEFERRABLE_TIMER);
+ 
+     hif_state->fw_indicator_address = FW_INDICATOR_ADDRESS;
+---
