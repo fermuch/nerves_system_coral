@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 12:00:00 +0000
+Subject: [PATCH] Fix additional timer API issues for kernel 5.4 compatibility
+
+Kernel 5.4 changed the timer API in multiple files:
+- init_timer() was replaced with timer_setup()
+- Timer callback signature changed from (unsigned long) to (struct timer_list *)
+- Manual function assignment is no longer needed
+
+This patch fixes timer issues in wlan_hdd_early_suspend.c and wlan_hdd_main.c.
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/HDD/src/wlan_hdd_early_suspend.c | XX +++++++++++++++++++++---
+ CORE/HDD/src/wlan_hdd_main.c         | XX +++++++++++++++++++++---
+ 2 files changed, XX insertions(+), XX deletions(-)
+
+--- a/CORE/HDD/src/wlan_hdd_early_suspend.c	2025-07-30 11:30:25.851533521 -0300
++++ b/CORE/HDD/src/wlan_hdd_early_suspend.c	2025-07-30 11:32:44.757483774 -0300
+@@ -1976,7 +1976,11 @@
+ 
+ static void hdd_ssr_timer_init(void)
+ {
++    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++    timer_setup(&ssr_timer, hdd_ssr_timer_cb, 0);
++#else
+     init_timer(&ssr_timer);
++#endif
+ }
+ 
+ static void hdd_ssr_timer_del(void)
+@@ -1985,7 +1989,11 @@
+     ssr_timer_started = false;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++static void hdd_ssr_timer_cb(struct timer_list *timer)
++#else
+ static void hdd_ssr_timer_cb(unsigned long data)
++#endif
+ {
+     hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD SSR timer expired!", __func__);
+     VOS_BUG(0);
+@@ -1999,7 +2007,9 @@
+                "it's running!", __func__);
+     }
+     ssr_timer.expires = jiffies + msecs_to_jiffies(msec);
++    #if (LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0))
+     ssr_timer.function = hdd_ssr_timer_cb;
++#endif
+     add_timer(&ssr_timer);
+     ssr_timer_started = true;
+ }
+--- a/CORE/HDD/src/wlan_hdd_main.c	2025-07-30 11:33:10.017353464 -0300
++++ b/CORE/HDD/src/wlan_hdd_main.c	2025-07-30 11:34:15.960346577 -0300
+@@ -17879,7 +17879,11 @@
+  */
+ static void hdd_unload_timer_init(void)
+ {
+-	init_timer(&unload_timer);
++	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++        timer_setup(&unload_timer, hdd_unload_timer_cb, 0);
++#else
++        init_timer(&unload_timer);
++#endif
+ }
+ 
+ /**
+@@ -17902,7 +17906,11 @@
+  *
+  * Return: None
+  */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++static void hdd_unload_timer_cb(struct timer_list *timer)
++#else
+ static void hdd_unload_timer_cb(unsigned long data)
++#endif
+ {
+ 	v_CONTEXT_t vos_context = NULL;
+ 	hdd_context_t *hdd_ctx = NULL;
+@@ -17942,7 +17950,9 @@
+ 			"%s: Starting unload timer when it's running!",
+ 			__func__);
+ 	unload_timer.expires = jiffies + msecs_to_jiffies(msec);
+-	unload_timer.function = hdd_unload_timer_cb;
++	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0))
++  unload_timer.function = hdd_unload_timer_cb;
++#endif
+ 	add_timer(&unload_timer);
+ 	unload_timer_started = true;
+ }
+
+---

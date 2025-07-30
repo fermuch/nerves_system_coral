@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 10:00:00 +0000
+Subject: [PATCH] Fix hdd_hostapd_select_queue function signature for kernel 5.4
+
+Similar to hdd_select_queue, the hdd_hostapd_select_queue function needs
+to be updated for kernel 5.4 where the fallback parameter was removed
+from ndo_select_queue.
+
+This patch applies the same conditional compilation fix to ensure the
+function signature matches what the kernel expects.
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/HDD/inc/wlan_hdd_wmm.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/CORE/HDD/inc/wlan_hdd_wmm.h	
++++ b/CORE/HDD/inc/wlan_hdd_wmm.h	
+@@ -272,7 +272,7 @@
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0))
+                                  , void *accel_priv
+ #endif
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0))
+                                  , select_queue_fallback_t fallback
+ #endif
+ );
+
+---

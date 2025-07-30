@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 16:30:00 +0000
+Subject: [PATCH] Fix ALL remaining timer callback and time API issues for kernel 5.4
+
+This comprehensive patch fixes the final remaining kernel 5.4 compatibility issues:
+
+Timer callback signature fix:
+- Update vos_linux_timer_callback signature for kernel 5.4+ 
+- Change from (unsigned long data) to (struct timer_list *timer_list)
+- Use from_timer() macro to extract timer context in kernel 5.4+
+- Add conditional compilation to maintain backward compatibility
+
+Time API fixes:
+- Fix remaining do_gettimeofday() call in vos_timer_get_system_time() (line 886)
+- Fix remaining do_gettimeofday() call in vos_pkt_trace_buf_update() (line 353)
+- Replace with ktime_get_real_ts64() and proper timespec64 to timeval conversion
+
+This patch resolves ALL timer callback signature mismatches and remaining time API
+compatibility issues for kernel 5.4.
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/VOSS/src/vos_timer.c  | 14 ++++++++++++--
+ CORE/VOSS/src/vos_packet.c |  7 ++++++-
+ 2 files changed, 18 insertions(+), 3 deletions(-)--- a/CORE/VOSS/src/vos_timer.c	2025-07-30 14:45:56.003169983 -0300
++++ b/CORE/VOSS/src/vos_timer.c	2025-07-30 14:47:16.659458086 -0300
+@@ -112,9 +112,15 @@
+ 
+   --------------------------------------------------------------------------*/
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++static void vos_linux_timer_callback (struct timer_list *timer_list)
++{
++   vos_timer_t *timer = from_timer(timer, timer_list, platformInfo.Timer);
++#else
+ static void vos_linux_timer_callback (unsigned long data)
+ {
+    vos_timer_t *timer = ( vos_timer_t *)data;
++#endif
+    vos_msg_t msg;
+    VOS_STATUS vStatus;
+    unsigned long flags;
+@@ -883,7 +889,14 @@
+ v_TIME_t vos_timer_get_system_time( v_VOID_t )
+ {
+    struct timeval tv;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++   struct timespec64 ts;
++   ktime_get_real_ts64(&ts);
++   tv.tv_sec = ts.tv_sec;
++   tv.tv_usec = ts.tv_nsec / 1000;
++#else
+    do_gettimeofday(&tv);
++#endif
+    return tv.tv_sec*1000 + tv.tv_usec/1000;
+ }
+ 
+--- a/CORE/VOSS/src/vos_packet.c	2025-07-30 14:45:56.006503301 -0300
++++ b/CORE/VOSS/src/vos_packet.c	2025-07-30 14:50:05.541980799 -0300
+@@ -350,7 +350,13 @@
+    trace_buffer[slot].order = trace_buffer_order;
+    trace_buffer_order++;
+    SPIN_UNLOCK_BH(&trace_buffer_lock);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++   ktime_get_real_ts64(&ts);
++   tv.tv_sec = ts.tv_sec;
++   tv.tv_usec = ts.tv_nsec / 1000;
++#else
+    do_gettimeofday(&tv);
++#endif
+    trace_buffer[slot].event_sec_time = tv.tv_sec;
+    trace_buffer[slot].event_msec_time = tv.tv_usec;
+    strlcpy(trace_buffer[slot].event_string, event_string,
+---

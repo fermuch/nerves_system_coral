@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 12:30:00 +0000
+Subject: [PATCH] Fix timer callback forward declaration issues for kernel 5.4
+
+Timer callbacks must be declared before timer_setup() calls in kernel 5.4+.
+The timer_setup() function requires the callback to be visible at compile time.
+
+This patch adds forward declarations for:
+- hdd_ssr_timer_cb in wlan_hdd_early_suspend.c
+- hdd_unload_timer_cb in wlan_hdd_main.c
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/HDD/src/wlan_hdd_early_suspend.c | XX +++++++++++++++++++++
+ CORE/HDD/src/wlan_hdd_main.c         | XX +++++++++++++++++++++
+ 2 files changed, XX insertions(+), XX deletions(-)
+
+--- a/CORE/HDD/src/wlan_hdd_early_suspend.c	2025-07-30 11:37:26.242697924 -0300
++++ b/CORE/HDD/src/wlan_hdd_early_suspend.c	2025-07-30 11:37:51.879232265 -0300
+@@ -121,6 +121,13 @@
+ extern tVOS_CON_MODE hdd_get_conparam ( void );
+ 
+ static struct timer_list ssr_timer;
++
++/* Forward declaration for timer callback */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++static void hdd_ssr_timer_cb(struct timer_list *timer);
++#else
++static void hdd_ssr_timer_cb(unsigned long data);
++#endif
+ static bool ssr_timer_started;
+ 
+ #ifdef FEATURE_WLAN_DIAG_SUPPORT
+--- a/CORE/HDD/src/wlan_hdd_main.c	2025-07-30 11:37:58.805863178 -0300
++++ b/CORE/HDD/src/wlan_hdd_main.c	2025-07-30 11:38:18.972425748 -0300
+@@ -17862,6 +17862,13 @@
+ #endif /* #ifdef MODULE */
+ 
+ static struct timer_list unload_timer;
++
++/* Forward declaration for timer callback */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++static void hdd_unload_timer_cb(struct timer_list *timer);
++#else
++static void hdd_unload_timer_cb(unsigned long data);
++#endif
+ static bool unload_timer_started;
+ 
+ #ifdef CONFIG_SLUB_DEBUG_ON
+
+---

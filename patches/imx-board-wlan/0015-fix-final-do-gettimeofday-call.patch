@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 17:15:00 +0000
+Subject: [PATCH] Fix final do_gettimeofday call in vos_get_time_of_the_day_ms
+
+This patch fixes the final remaining do_gettimeofday() call that was
+missed in the previous comprehensive patch.
+
+Time API fix:
+- Fix vos_get_time_of_the_day_ms function to use ktime_get_real_ts64()
+  instead of do_gettimeofday() for kernel 5.4+
+- Add proper timespec64 to timeval conversion
+- Add conditional compilation to maintain backward compatibility
+
+This resolves the final compilation error for kernel 5.4 compatibility.
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/VOSS/src/vos_timer.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)--- a/CORE/VOSS/src/vos_timer.c	2025-07-30 15:36:12.072435801 -0300
++++ b/CORE/VOSS/src/vos_timer.c	2025-07-30 15:36:40.028967460 -0300
+@@ -900,11 +900,20 @@
+  */
+ unsigned long vos_get_time_of_the_day_ms(void)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++	struct timespec64 ts;
++#endif
+ 	struct timeval tv;
+ 	unsigned long local_time;
+ 	struct rtc_time tm;
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++	ktime_get_real_ts64(&ts);
++	tv.tv_sec = ts.tv_sec;
++	tv.tv_usec = ts.tv_nsec / 1000;
++#else
+ 	do_gettimeofday(&tv);
++#endif
+ 
+ 	local_time = (uint32_t)(tv.tv_sec -
+ 		(sys_tz.tz_minuteswest * 60));
+---

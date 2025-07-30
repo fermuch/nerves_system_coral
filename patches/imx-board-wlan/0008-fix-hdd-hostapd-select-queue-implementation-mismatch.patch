@@ -1,0 +1,22 @@
+From: AI Assistant <assistant@example.com>
+Date: Tue, 30 Jul 2025 13:20:00 -0300
+Subject: [PATCH] Fix hdd_hostapd_select_queue implementation to match header
+
+This patch fixes the hdd_hostapd_select_queue implementation to match
+the header declaration by adding the upper bound check for kernel 5.4+
+in the fallback parameter conditional compilation.
+
+diff --git a/CORE/HDD/src/wlan_hdd_wmm.c b/CORE/HDD/src/wlan_hdd_wmm.c
+index 1234567..abcdefg 100644
+--- a/CORE/HDD/src/wlan_hdd_wmm.c
++++ b/CORE/HDD/src/wlan_hdd_wmm.c
+@@ -1841,7 +1841,7 @@
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0))
+                                  , void *accel_priv
+ #endif
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0))
+                                  , select_queue_fallback_t fallback
+ #endif
+ )
+---

@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 10:00:00 +0000
+Subject: [PATCH] Fix timer API for kernel 5.4 compatibility
+
+The timer API changed in kernel 5.4 where init_timer() and
+init_timer_deferrable() were removed and replaced with timer_setup().
+Also timer->function signature and timer->data handling changed.
+
+This patch adds conditional compilation to handle both old and new APIs.
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/SERVICES/COMMON/adf/linux/adf_os_timer_pvt.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/CORE/SERVICES/COMMON/adf/linux/adf_os_timer_pvt.h	
++++ b/CORE/SERVICES/COMMON/adf/linux/adf_os_timer_pvt.h	
+@@ -70,12 +70,20 @@
+                     void                *arg,
+                     uint8_t type)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++    if (ADF_DEFERRABLE_TIMER == type) {
++        timer_setup(timer, (void (*)(struct timer_list *))func, TIMER_DEFERRABLE);
++    } else {
++        timer_setup(timer, (void (*)(struct timer_list *))func, 0);
++    }
++#else
+     if (ADF_DEFERRABLE_TIMER == type)
+         init_timer_deferrable(timer);
+     else
+         init_timer(timer);
+     timer->function = (adf_dummy_timer_func_t)func;
+     timer->data = (unsigned long)arg;
++#endif
+ 
+     return A_STATUS_OK;
+ }
+
+---

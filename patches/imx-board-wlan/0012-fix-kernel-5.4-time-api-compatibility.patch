@@ -1,0 +1,46 @@
+From: AI Assistant <assistant@example.com>
+Date: Tue, 30 Jul 2025 13:25:00 -0300
+Subject: [PATCH] Fix kernel 5.4 time API compatibility issues
+
+This patch fixes kernel 5.4 time API compatibility issues:
+1. Replace do_gettimeofday with ktime_get_real_ts64 for kernel 5.4+
+2. Replace ktime_get_boot_ns with ktime_get_boottime_ns for kernel 5.4+
+
+diff --git a/CORE/SVC/src/logging/wlan_logging_sock_svc.c b/CORE/SVC/src/logging/wlan_logging_sock_svc.c
+index 1234567..abcdefg 100644
+--- a/CORE/SVC/src/logging/wlan_logging_sock_svc.c
++++ b/CORE/SVC/src/logging/wlan_logging_sock_svc.c
+@@ -311,7 +311,14 @@
+ 	} else {
+ 
+ 		/* Format the Log time R#: [hr:min:sec.microsec] */
+-		do_gettimeofday(&tv);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++                struct timespec64 ts;
++                ktime_get_real_ts64(&ts);
++                tv.tv_sec = ts.tv_sec;
++                tv.tv_usec = ts.tv_nsec / 1000;
++#else
++                do_gettimeofday(&tv);
++#endif
+ 		/* Convert rtc to local time */
+ 		local_time = (u32)(tv.tv_sec - (sys_tz.tz_minuteswest * 60));
+ 		rtc_time_to_tm(local_time, &tm);
+diff --git a/CORE/VOSS/src/vos_api.c b/CORE/VOSS/src/vos_api.c
+index 1234567..abcdefg 100644
+--- a/CORE/VOSS/src/vos_api.c
++++ b/CORE/VOSS/src/vos_api.c
+@@ -3205,7 +3205,11 @@
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(3, 10, 0))
+ v_U64_t vos_get_bootbased_boottime_ns(void)
+ {
+-	return ktime_get_boot_ns();
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
++        return ktime_get_boottime_ns();
++#else
++        return ktime_get_boot_ns();
++#endif
+ }
+ 
+ #else
+---

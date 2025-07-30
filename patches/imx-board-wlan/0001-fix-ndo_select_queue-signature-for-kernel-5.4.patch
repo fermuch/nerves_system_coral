@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: System Builder <builder@nerves-project.org>
+Date: Wed, 30 Jul 2025 10:00:00 +0000
+Subject: [PATCH] Fix ndo_select_queue function signature for kernel 5.4
+
+The ndo_select_queue function signature changed in kernel 5.4 where the
+fallback parameter was removed. This patch updates the conditional
+compilation to handle kernel 5.4 correctly.
+
+Kernel 5.4 signature:
+u16 (*ndo_select_queue)(struct net_device *dev, struct sk_buff *skb,
+                        void *accel_priv);
+
+Earlier kernels (>= 3.14 && < 5.4) had:
+u16 (*ndo_select_queue)(struct net_device *dev, struct sk_buff *skb,
+                        void *accel_priv, select_queue_fallback_t fallback);
+
+Signed-off-by: System Builder <builder@nerves-project.org>
+---
+ CORE/HDD/src/wlan_hdd_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CORE/HDD/src/wlan_hdd_main.c b/CORE/HDD/src/wlan_hdd_main.c
+index 1234567..abcdefg 100644
+--- a/CORE/HDD/src/wlan_hdd_main.c
++++ b/CORE/HDD/src/wlan_hdd_main.c
+@@ -10802,7 +10802,7 @@ static v_U16_t hdd_select_queue(struct net_device *dev,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0))
+                          , void *accel_priv
+ #endif
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0))
+                          , select_queue_fallback_t fallback
+ #endif
+ )
+-- 
+2.39.2
