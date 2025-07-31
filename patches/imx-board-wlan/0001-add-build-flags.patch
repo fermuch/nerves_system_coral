@@ -1,0 +1,16 @@
+--- a/Makefile
++++ b/Makefile
+@@ -8,6 +8,13 @@
+ 
+ KBUILD_OPTIONS := WLAN_ROOT=$(PWD)
+ KBUILD_OPTIONS += MODNAME?=wlan
++KBUILD_OPTIONS += HIF_SDIO=1
++KBUILD_OPTIONS += HIF_PCI=0
++KBUILD_OPTIONS += WLAN_FEATURE_11W=1
++KBUILD_OPTIONS += WLAN_OPEN_SOURCE=1
++KBUILD_OPTIONS += CONFIG_QCA_CLD_WLAN=m
++KBUILD_OPTIONS += CONFIG_QCA_WIFI_ISOC=0
++KBUILD_OPTIONS += CONFIG_QCA_WIFI_2_0=1
+ 
+ # Determine if the driver license is Open source or proprietary
+ # This is determined under the assumption that LICENSE doesn't change.
