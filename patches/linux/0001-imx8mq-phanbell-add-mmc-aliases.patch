@@ -1,0 +1,28 @@
+From: Fernando Mumbach <fermuch@ayvu.net>
+Date: Thu Jul 31 11:24:54 -03 2025
+Subject: [PATCH] ARM64: dts: imx8mq-phanbell: Add MMC aliases for proper enumeration
+
+Add MMC aliases to ensure consistent device enumeration between
+U-Boot and Linux kernel.
+
+Signed-off-by: Fernando Mumbach <fermuch@ayvu.net>
+---
+ arch/arm64/boot/dts/freescale/imx8mq-phanbell.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mq-phanbell.dts b/arch/arm64/boot/dts/freescale/imx8mq-phanbell.dts
+--- a/arch/arm64/boot/dts/freescale/imx8mq-phanbell.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mq-phanbell.dts
+@@ -12,6 +12,11 @@ / {
+ 	model = "Google i.MX8MQ Phanbell";
+ 	compatible = "google,imx8mq-phanbell", "fsl,imx8mq";
+
++	aliases {
++		mmc0 = &usdhc1;
++		mmc1 = &usdhc2;
++	};
++
+ 	chosen {
+ 		stdout-path = &uart1;
+ 	};
+---
