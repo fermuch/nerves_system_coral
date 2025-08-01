@@ -1,0 +1,167 @@
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq-phanbell.dts b/arch/arm64/boot/dts/freescale/fsl-imx8mq-phanbell.dts
+--- a/arch/arm64/boot/dts/freescale/fsl-imx8mq-phanbell.dts
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq-phanbell.dts
+@@ -1,17 +1,15 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ /*
+  * Copyright 2018 NXP
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version 2
+- * of the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
++/dts-v1/;
++
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/clock/imx8mq-clock.h>
++#include <dt-bindings/thermal/thermal.h>
+ #include "fsl-imx8mq-som.dtsi"
+ 
+ / {
+@@ -39,7 +37,6 @@
+ 	};
+ };
+ 
+-
+ / {
+ 	model = "Freescale i.MX8MQ Phanbell";
+ 	compatible = "fsl,imx8mq-phanbell", "fsl,imx8mq";
+@@ -73,6 +70,21 @@
+ 		};
+ 	};
+ 
++	regulators {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		reg_usdhc2_vmmc: usdhc2_vmmc {
++			compatible = "regulator-fixed";
++			regulator-name = "VSD_3V3";
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++			enable-active-high;
++		};
++	};
++
+ 	busfreq {
+ 		status = "disabled";
+ 	};
+@@ -97,6 +109,10 @@
+ 	};
+ };
+ 
++&A53_0 {
++	cpu-supply = <&buck2_reg>;
++};
++
+ &iomuxc {
+ 	imx8mq-phanbell {
+ 		pinctrl_sai1: sai1grp {
+@@ -163,7 +179,6 @@
+ 		reg = <1>;
+ 		status = "okay";
+ 	};
+-
+ };
+ 
+ &iomuxc {
+@@ -191,13 +206,11 @@
+ 				MX8MQ_IOMUXC_GPIO1_IO01_PWM1_OUT		0x7f
+ 			>;
+ 		};
+-
+ 		pinctrl_pwm2: pwm2 {
+ 			fsl,pins = <
+ 				MX8MQ_IOMUXC_GPIO1_IO13_PWM2_OUT		0x7f
+ 			>;
+ 		};
+-
+ 		pinctrl_pwm3: pwm3 {
+ 			fsl,pins = <
+ 				MX8MQ_IOMUXC_GPIO1_IO14_PWM3_OUT		0x7f
+@@ -236,7 +249,6 @@
+ 
+ &dcss {
+ 	disp-dev = "hdmi_disp";
+-	status = "okay";
+ };
+ 
+ &sai1 {
+@@ -263,8 +275,6 @@
+ 		<&clk IMX8MQ_CLK_SAI2>;
+ 	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
+ 	assigned-clock-rates = <24576000>;
+-	status = "okay";
+-
+ 	clocks = <&clk IMX8MQ_CLK_SAI2_IPG>, <&clk IMX8MQ_CLK_DUMMY>,
+ 		<&clk IMX8MQ_CLK_SAI2_ROOT>, <&clk IMX8MQ_CLK_DUMMY>,
+ 		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_AUDIO_PLL1_OUT>,
+@@ -273,8 +283,6 @@
+ };
+ 
+ &i2c2 {
+-	status = "okay";
+-
+ 	power_monitor_a: power_monitor_a@40 {
+ 		compatible = "ti,ina226";
+ 		reg = <0x40>;
+@@ -292,8 +300,6 @@
+ };
+ 
+ &i2c3 {
+-	status = "okay";
+-
+ 	rt5645: rt5645@1a {
+ 		compatible = "realtek,rt5645";
+ 		reg = <0x1a>;
+@@ -320,8 +326,6 @@
+ };
+ 
+ &i2c2 {
+-	status = "okay";
+-
+ 	ov5645_mipi: ov5645_mipi@3c {
+ 		compatible = "ovti,ov5645_mipi";
+ 		reg = <0x3c>;
+@@ -348,7 +352,6 @@
+ 	fsl,mipi-mode;
+ 	fsl,two-8bit-sensor-mode;
+ 	status = "okay";
+-
+ 	port {
+ 		csi1_ep: endpoint {
+ 			remote-endpoint = <&csi1_mipi_ep>;
+@@ -365,10 +368,19 @@
+ 			remote-endpoint = <&ov5645_mipi1_ep>;
+ 			data-lanes = <1 2>;
+ 		};
+-
+ 		csi1_mipi_ep: endpoint2 {
+ 			remote-endpoint = <&csi1_ep>;
+ 		};
+ 	};
+ };
+ 
++&usdhc2 {
++	pinctrl-names = "default", "state_100mhz", "state_200mhz";
++	pinctrl-0 = <&pinctrl_usdhc2>, <&pinctrl_usdhc2_gpio>;
++	pinctrl-1 = <&pinctrl_usdhc2_100mhz>, <&pinctrl_usdhc2_gpio>;
++	pinctrl-2 = <&pinctrl_usdhc2_200mhz>, <&pinctrl_usdhc2_gpio>;
++	bus-width = <4>;
++	cd-gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
++	vmmc-supply = <&reg_usdhc2_vmmc>;
++	status = "okay";
++};
+\ No newline at end of file
+---
